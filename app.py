@@ -1,13 +1,10 @@
 import sqlite3
-from flask import Flask, request, render_template
+from flask import Flask, request, jsonify, render_template
 
-# The database will now be in-memory for each request
+# --- Database and Data Setup ---
+# A function to get an in-memory database connection and initialize it
 def get_db_connection():
     conn = sqlite3.connect(':memory:')
-    return conn
-
-def init_db(conn):
-    """Creates and initializes the database with a more detailed schema."""
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE scores (
@@ -34,10 +31,11 @@ def init_db(conn):
     cursor.execute('''
         INSERT INTO scores VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('c2tActR9Wb', 'RAJAMANI KULASEKARARAJAAMANISIVAVIGNESWARA', '', '印度', '男', 
-          '深圳大学（网考）', 'H42506899970100009 H82506899970100013', 'H42506899970100013', 
-          'H42507065464', 'HSK四级', '19-Jul-2025', '135', '不合格', 58, 38, 39, 21))
+          '深圳大学（网考）', 'H42506899970100009 H82506899970100013', 'H42507065464', 
+          'HSK四级', '19-Jul-2025', '135', '不合格', 58, 38, 39, 21))
     
     conn.commit()
+    return conn
 
 # --- Flask Application Setup ---
 app = Flask(__name__)
@@ -46,11 +44,10 @@ app = Flask(__name__)
 def query_score():
     """Handles requests and renders the HTML template."""
     conn = get_db_connection()
-    init_db(conn) # Initialize the in-memory database for this request
-
     student_id = request.args.get('sid')
     if not student_id:
-        return "Student ID is missing.", 400
+        conn.close()
+        return jsonify({"error": "Missing student ID"}), 400
 
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM scores WHERE sid = ?", (student_id,))
@@ -78,9 +75,7 @@ def query_score():
         }
         return render_template('results.html', student=student_data)
     else:
-        return "Student ID not found.", 404
+        return jsonify({"error": "Student ID not found"}), 404
 
 if __name__ == '__main__':
-    conn = get_db_connection()
-    init_db(conn)
     app.run(debug=True)
