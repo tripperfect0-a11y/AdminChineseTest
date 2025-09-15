@@ -1,5 +1,6 @@
 import sqlite3
-from flask import Flask, request, render_template
+import os
+from flask import Flask, request, jsonify, render_template
 
 # --- Database Setup ---
 DATABASE = 'scores.db'
@@ -40,11 +41,12 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Initialize the new database
+# The Vercel serverless function starts fresh every time, so we need to
+# create the database and populate it on every run.
 init_db()
 
 # --- Flask Application Setup ---
-app = Flask(__name__, static_folder='templates/static')
+app = Flask(__name__)
 
 @app.route('/queryScore.do')
 def query_score():
@@ -60,7 +62,6 @@ def query_score():
     conn.close()
 
     if result:
-        # Create a dictionary from the database result for easier access in the template
         student_data = {
             "sid": result[0],
             "name": result[1],
@@ -79,7 +80,6 @@ def query_score():
             "writing_score": result[14],
             "oral_score": result[15]
         }
-        # Render the HTML template, passing the student data to it
         return render_template('results.html', student=student_data)
     else:
         return "Student ID not found.", 404
