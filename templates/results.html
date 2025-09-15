@@ -1,0 +1,200 @@
+<html><head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/phone/phone.css') }}" type="text/css">
+    <meta charset="utf-8">
+</head><body><div class="well-sm">
+	
+	<center>
+	  <h2>中文考试成绩在线验证结果查询</h2>
+	  <h4>汉考国际教育科技（北京）有限公司（CTI）</h4>
+	</center>
+	<div class="panel panel-default">
+		<div class="well-lg">
+			<div class="panel panel-default">
+				<!-- Default panel contents -->
+				<div class="panel-body">
+					Information of test taker 
+				</div>
+				<!-- Table -->
+				<table class="table table-bordered">
+					<tbody>
+						<tr>
+							<td class="active text-right">Name on Certificate </td>
+							<td>{{ student.name }}</td>
+							<td rowspan="5" width="100px">
+								
+									
+									
+										<img src="file.jpg" height="200px">
+									
+								
+							</td>
+						</tr>
+						<tr>
+							<td class="active text-right">Chinese Name</td>
+							<td>{{ student.chinese_name }}</td>
+						</tr>
+						<tr>
+							<td class="active text-right">Nationality</td>
+							<td>{{ student.nationality }}</td>
+						</tr>
+						<tr>
+							<td class="active text-right">Gender</td>
+							<td>{{ student.gender }}</td>
+						</tr>
+						<tr>
+							<td colspan="2" class="" style="font-size:14px;">考试信息</td>
+						</tr>
+						<tr>
+							<td class="active text-right">考点名称</td>
+							<td colspan="2">{{ student.test_location }}</td>
+						</tr>
+						<tr>
+							<td class="active text-right">Ticket No.</td>
+							<td colspan="2">{{ student.ticket_no }}</td>
+						</tr>
+						<tr>
+							<td class="active text-right">证书编号</td>
+							<td colspan="2">{{ student.certificate_no }}</td>
+						</tr>
+						<tr>
+							<td class="active text-right">Test Type</td>
+							
+							
+							      <td colspan="2">{{ student.test_type }}</td>
+							
+						     
+						</tr>
+						
+						<tr>
+							<td class="active text-right">Test Time</td>
+							<td colspan="2">{{ student.test_time }}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			
+			
+			<div class="panel panel-default">
+				<!-- Default panel contents -->
+				<div class="panel-body">
+					HSK四级({{ student.test_time }})中文水平考试
+					
+				</div>
+				<!-- Table -->
+				<table class="table table-bordered">
+					<thead>
+						<tr class="active">
+							
+								<th><div align="center">听力</div></th>
+							
+								<th><div align="center">阅读</div></th>
+							
+								<th><div align="center">写作</div></th>
+							
+							<th>
+							<div align="center">
+								
+									
+									Total Score
+								
+							</div>
+							</th>
+							
+								
+									<th><div align="center">Status</div></th>
+								
+							
+							
+							
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							
+								<td align="center">
+									{{ student.listening_score }}
+								</td>
+							
+								<td align="center">
+									{{ student.reading_score }}
+								</td>
+							
+								<td align="center">
+									{{ student.writing_score }}
+								</td>
+							
+							<td align="center">
+								
+									
+									{{ student.total_score }}
+								
+							</td>
+							
+								
+									<td align="center">{{ student.status }}</td>
+								
+							
+							
+						</tr>
+					</tbody>
+				</table>
+				
+			</div>
+			
+			<!-- 越南才显示 或者 能关联上口语的才显示 flag 代表关联上成绩 180 越南-->
+			
+			
+				<div class="panel panel-default">
+					<!-- Default panel contents -->
+					<div class="panel-body">
+						HSKK（中级）({{ student.test_time }})中文水平考试
+					</div>
+					<!-- Table -->
+					<table class="table table-bordered">
+						<thead>
+							<tr class="active">
+								
+								
+									<th><div align="center">口试</div></th>
+								
+								<th><div align="center">Total Score</div></th>
+								
+									
+										<th><div align="center">Status</div></th>
+									
+								
+								
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								
+									<td align="center">
+										{{ student.oral_score }}
+									</td>
+								
+								<td align="center">{{ student.oral_score }}</td>
+								
+									
+										<td align="center">{{ student.status }}</td>
+									
+								
+								
+							</tr>
+						</tbody>
+					</table>
+					
+				</div>
+			
+			
+			
+			
+			<center>
+	  <h6>最终解释权归汉考国际所有</h6>
+	</center>
+			
+		</div>
+	</div>
+	
+</div></body></html>
