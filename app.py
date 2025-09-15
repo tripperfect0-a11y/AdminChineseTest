@@ -1,15 +1,14 @@
 import sqlite3
-import os
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, render_template
 
-# --- Database Setup ---
-DATABASE = 'scores.db'
+# The database will now be in-memory for each request
+def get_db_connection():
+    conn = sqlite3.connect(':memory:')
+    return conn
 
-def init_db():
+def init_db(conn):
     """Creates and initializes the database with a more detailed schema."""
-    conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-    cursor.execute('DROP TABLE IF EXISTS scores')
     cursor.execute('''
         CREATE TABLE scores (
             sid TEXT PRIMARY KEY,
@@ -35,15 +34,10 @@ def init_db():
     cursor.execute('''
         INSERT INTO scores VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('c2tActR9Wb', 'RAJAMANI KULASEKARARAJAAMANISIVAVIGNESWARA', '', '印度', '男', 
-          '深圳大学（网考）', 'H42506899970100009 H82506899970100013', 'H42507065464', 
-          'HSK四级', '19-Jul-2025', '135', '不合格', 58, 38, 39, 21))
+          '深圳大学（网考）', 'H42506899970100009 H82506899970100013', 'H42506899970100013', 
+          'H42507065464', 'HSK四级', '19-Jul-2025', '135', '不合格', 58, 38, 39, 21))
     
     conn.commit()
-    conn.close()
-
-# The Vercel serverless function starts fresh every time, so we need to
-# create the database and populate it on every run.
-init_db()
 
 # --- Flask Application Setup ---
 app = Flask(__name__)
@@ -51,11 +45,13 @@ app = Flask(__name__)
 @app.route('/queryScore.do')
 def query_score():
     """Handles requests and renders the HTML template."""
+    conn = get_db_connection()
+    init_db(conn) # Initialize the in-memory database for this request
+
     student_id = request.args.get('sid')
     if not student_id:
         return "Student ID is missing.", 400
 
-    conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM scores WHERE sid = ?", (student_id,))
     result = cursor.fetchone()
@@ -85,4 +81,6 @@ def query_score():
         return "Student ID not found.", 404
 
 if __name__ == '__main__':
+    conn = get_db_connection()
+    init_db(conn)
     app.run(debug=True)
