@@ -1,81 +1,52 @@
-import sqlite3
-from flask import Flask, request, jsonify, render_template
+import os
+import requests
+from flask import Flask, request, render_template
 
-# --- Database and Data Setup ---
-# A function to get an in-memory database connection and initialize it
-def get_db_connection():
-    conn = sqlite3.connect(':memory:')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE scores (
-            sid TEXT PRIMARY KEY,
-            name_on_certificate TEXT,
-            chinese_name TEXT,
-            nationality TEXT,
-            gender TEXT,
-            test_location TEXT,
-            ticket_no TEXT,
-            certificate_no TEXT,
-            test_type TEXT,
-            test_time TEXT,
-            total_score TEXT,
-            status TEXT,
-            listening_score INTEGER,
-            reading_score INTEGER,
-            writing_score INTEGER,
-            oral_score INTEGER
-        )
-    ''')
-    
-    # Sample data to match your HTML template
-    cursor.execute('''
-        INSERT INTO scores VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', ('c2tActR9Wb', 'RAJAMANI KULASEKARARAJAAMANISIVAVIGNESWARA', '', '印度', '男', 
-          '深圳大学（网考）', 'H42506899970100009 H82506899970100013', 'H42507065464', 
-          'HSK四级', '19-Jul-2025', '135', '不合格', 58, 38, 39, 21))
-    
-    conn.commit()
-    return conn
+# --- Supabase API Details ---
+# Store these securely as environment variables
+SUPABASE_URL = "https://oltrxsrigdwgjhqdzgag.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sdHJ4c3JpZ2R3Z2pocWR6Z2FnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5OTczNzgsImV4cCI6MjA3MzU3MzM3OH0.OIL7d4lyNB1A5BF3fHIgq1tsux5wxiIAls2IiVKeG8k"
 
 # --- Flask Application Setup ---
 app = Flask(__name__)
 
 @app.route('/queryScore.do')
 def query_score():
-    """Handles requests and renders the HTML template."""
-    conn = get_db_connection()
+    """Handles the query and fetches data from Supabase."""
     student_id = request.args.get('sid')
     if not student_id:
-        conn.close()
-        return jsonify({"error": "Missing student ID"}), 400
+        return "Student ID is missing.", 400
 
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM scores WHERE sid = ?", (student_id,))
-    result = cursor.fetchone()
-    conn.close()
+    # The API URL to query your 'scores' table
+    api_url = f"{SUPABASE_URL}/rest/v1/scores"
 
-    if result:
-        student_data = {
-            "sid": result[0],
-            "name": result[1],
-            "chinese_name": result[2],
-            "nationality": result[3],
-            "gender": result[4],
-            "test_location": result[5],
-            "ticket_no": result[6],
-            "certificate_no": result[7],
-            "test_type": result[8],
-            "test_time": result[9],
-            "total_score": result[10],
-            "status": result[11],
-            "listening_score": result[12],
-            "reading_score": result[13],
-            "writing_score": result[14],
-            "oral_score": result[15]
-        }
-        return render_template('results.html', student=student_data)
-    else:
-        return jsonify({"error": "Student ID not found"}), 404
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    params = {
+        "sid": f"eq.{student_id}",
+        "select": "*"
+    }
+
+    try:
+        response = requests.get(api_url, headers=headers, params=params)
+        response.raise_for_status()  # Raise an exception for bad status codes
+        
+        data = response.json()
+
+        if data and len(data) > 0:
+            student_data = data[0]
+            # Render the original HTML template with the fetched data
+            return render_template('results.html', student=student_data)
+        else:
+            return "Student ID not found.", 404
+    except requests.exceptions.RequestException as e:
+        return f"An API error occurred: {e}", 500
+    except Exception as e:
+        return f"An internal server error occurred: {e}", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
