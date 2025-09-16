@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Student Score</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
+    <style>
+        body { padding-top: 50px; }
+        .container { max-width: 800px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <center>
+            <h2>Add New Student Score</h2>
+        </center>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <form action="/add-score" method="POST">
+                    <div class="form-group row">
+                        <label for="sid" class="col-sm-4 col-form-label">Student ID (UUID)</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="sid" name="sid" placeholder="e.g., c973c6ca-989b-483d-a6e5-6ab1522392a5" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="name_on_certificate" class="col-sm-4 col-form-label">Name on Certificate</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="name_on_certificate" name="name_on_certificate" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="chinese_name" class="col-sm-4 col-form-label">Chinese Name</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="chinese_name" name="chinese_name">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="nationality" class="col-sm-4 col-form-label">Nationality</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="nationality" name="nationality">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="gender" class="col-sm-4 col-form-label">Gender</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="gender" name="gender">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="test_location" class="col-sm-4 col-form-label">Test Location</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="test_location" name="test_location">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ticket_no" class="col-sm-4 col-form-label">Ticket No.</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="ticket_no" name="ticket_no">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="certificate_no" class="col-sm-4 col-form-label">Certificate No.</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="certificate_no" name="certificate_no">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="test_type" class="col-sm-4 col-form-label">Test Type</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="test_type" name="test_type">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="test_time" class="col-sm-4 col-form-label">Test Time</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="test_time" name="test_time">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="total_score" class="col-sm-4 col-form-label">Total Score</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="total_score" name="total_score">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="status" class="col-sm-4 col-form-label">Status</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="status" name="status">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="listening_score" class="col-sm-4 col-form-label">Listening Score</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="listening_score" name="listening_score">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="reading_score" class="col-sm-4 col-form-label">Reading Score</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="reading_score" name="reading_score">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="writing_score" class="col-sm-4 col-form-label">Writing Score</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="writing_score" name="writing_score">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="oral_score" class="col-sm-4 col-form-label">Oral Score</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="oral_score" name="oral_score">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="profile_photo" class="col-sm-4 col-form-label">Profile Photo URL</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="profile_photo" name="profile_photo">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-sm-12 text-center">
+                            <button type="submit" class="btn btn-primary">Add Score</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -22,17 +22,12 @@
 							<td class="active text-right">Name on Certificate </td>
 							<td>{{ student.name_on_certificate }}</td>
 							<td rowspan="5" width="100px">
-								
-									
-									
-										<img src="file.jpg" height="200px" alt="img">
-									
-								
+								<img src="{{ student.profile_photo }}" height="200px" alt="Profile Photo">
 							</td>
 						</tr>
 						<tr>
 							<td class="active text-right">Chinese Name</td>
-							<td>{{ student.chinese_name }}</td>
+							<td>{{ student.chinese_name or '' }}</td>
 						</tr>
 						<tr>
 							<td class="active text-right">Nationality</td>
