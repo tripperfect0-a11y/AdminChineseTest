@@ -4,14 +4,15 @@ import uuid
 from flask import Flask, request, render_template, redirect, url_for, jsonify, session
 
 # --- Supabase API Details ---
+# IMPORTANT: These are read from Vercel environment variables
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") 
-SUPABASE_STORAGE_BUCKET = "student-images" 
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+SUPABASE_STORAGE_BUCKET = "Student Images" # Ensure this matches your exact bucket name (Case-sensitive)
 
 # --- Flask Application Setup ---
 app = Flask(__name__)
-# The FLASK_SECRET_KEY is read from environment variables
+# Secret key is read from FLASK_SECRET_KEY environment variable
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 
 # --- Authentication Helpers ---
@@ -19,27 +20,19 @@ def is_authenticated():
     """Checks if a valid access token exists in the session."""
     return 'access_token' in session
 
-# --- Core Routes ---
-
-# 1. Login/Auth Route (UNIFIED FIX)
+# --- 1. Login/Auth Route (UNIFIED) ---
 @app.route('/login', methods=['GET', 'POST'])
 def login_route():
     if request.method == 'GET':
-        # Show the login form
         return render_template('login.html')
 
     if request.method == 'POST':
-        # Process the login
         email = request.form.get('email')
         password = request.form.get('password')
 
         auth_url = f"{SUPABASE_URL}/auth/v1/token?grant_type=password"
         
-        headers = {
-            "apikey": SUPABASE_KEY,
-            "Content-Type": "application/json"
-        }
-        
+        headers = {"apikey": SUPABASE_KEY, "Content-Type": "application/json"}
         payload = {"email": email, "password": password}
 
         try:
@@ -48,7 +41,7 @@ def login_route():
             
             if response.ok and 'access_token' in auth_data:
                 session['access_token'] = auth_data['access_token']
-                # FIX: Redirect to the unified add_score_route
+                # FIX: Redirect to the add_score_route
                 return redirect(url_for('add_score_route')) 
             else:
                 error_message = auth_data.get('msg', 'Invalid credentials')
@@ -57,10 +50,10 @@ def login_route():
         except requests.exceptions.RequestException:
             return render_template('login.html', error='Could not connect to authentication server.'), 500
 
-# 2. Secure POST/GET Route (Consolidated)
+# --- 2. Secure POST/GET Route (UNIFIED & WITH FILE UPLOAD) ---
 @app.route('/add-score', methods=['GET', 'POST'])
 def add_score_route():
-    # Enforce Login: If not logged in, redirect to login page
+    # Enforce Login
     if not is_authenticated():
         return redirect(url_for('login_route'))
         
@@ -68,16 +61,16 @@ def add_score_route():
         return render_template('add_score.html')
         
     if request.method == 'POST':
-        # 1. Generate new ID and handle file upload
+        # 1. File Upload Logic
         file = request.files.get('profile_photo')
         new_sid = str(uuid.uuid4()) 
-        profile_photo_url = request.form.get('profile_photo') 
+        profile_photo_url = request.form.get('profile_photo')
 
         if file and file.filename:
-            # File Upload Logic (Complex)
             filename = f"{new_sid}-{file.filename}"
             profile_photo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{filename}"
             
+            # Security Headers for Storage API
             headers = {
                 "apikey": SUPABASE_SERVICE_KEY,
                 "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
@@ -86,6 +79,7 @@ def add_score_route():
             }
             
             try:
+                # POST request to Supabase Storage
                 requests.post(
                     f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{filename}", 
                     data=file.read(), 
@@ -114,11 +108,10 @@ def add_score_route():
             "writing_score": request.form.get('writing_score'),
             "oral_score": request.form.get('oral_score'),
             "oral_status": request.form.get('oral_status'),
-            "profile_photo": profile_photo_url # Final URL is stored here
+            "profile_photo": profile_photo_url
         }
-
-        # Remove fields with empty values
-        data = {k: v for k, v in data.items() if v}
+        
+        data = {k: v for k, v in data.items() if v} # Clean empty values
         
         # API Call to Insert the Record
         headers = {
@@ -133,16 +126,46 @@ def add_score_route():
         try:
             requests.post(api_url, json=data, headers=headers).raise_for_status()
             
-            # Final successful redirect
             return redirect(url_for('query_score', sid=new_sid))
         except requests.exceptions.RequestException as e:
             return f"Error inserting data: {e}", 500
+        except Exception as e:
+            return f"An internal server error occurred: {e}", 500
 
 # 3. Read Route (Public)
 @app.route('/queryScore.do')
 def query_score():
-    # ... your existing logic for the query_score route remains the same (not repeated for brevity) ...
-    pass # Assume this block is in app.py
+    """Handles the query and fetches data from Supabase."""
+    student_id = request.args.get('sid')
+    if not student_id:
+        return "Student ID is missing.", 400
+
+    api_url = f"{SUPABASE_URL}/rest/v1/scores"
+
+    # Headers use the public key for read access
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    params = {"sid": f"eq.{student_id}", "select": "*"}
+
+    try:
+        response = requests.get(api_url, headers=headers, params=params)
+        response.raise_for_status()
+        
+        data = response.json()
+
+        if data and len(data) > 0:
+            student_data = data[0]
+            return render_template('results.html', student=student_data)
+        else:
+            return "Student ID not found.", 404
+    except requests.exceptions.RequestException as e:
+        return f"An API error occurred: {e}", 500
+    except Exception as e:
+        return f"An internal server error occurred: {e}", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
