@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Add New Student Score</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
     <style>
-        body { padding-top: 50px; }
-        .container { max-width: 800px; }
+        body {
+            padding-top: 50px;
+        }
+
+        .container {
+            max-width: 800px;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <center>
@@ -16,17 +23,18 @@
         </center>
         <div class="panel panel-default">
             <div class="panel-body">
-                <form action="/add-score" method="POST">
-                    <div class="form-group row">
+                <form action="/add-score" method="POST" enctype="multipart/form-data">
+                    <!-- <div class="form-group row">
                         <label for="sid" class="col-sm-4 col-form-label">Student ID (UUID)</label>
                         <div class="col-sm-8">
                             <input type="text" class="form-control" id="sid" name="sid" placeholder="e.g., c973c6ca-989b-483d-a6e5-6ab1522392a5" required>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="form-group row">
                         <label for="name_on_certificate" class="col-sm-4 col-form-label">Name on Certificate</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="name_on_certificate" name="name_on_certificate" required>
+                            <input type="text" class="form-control" id="name_on_certificate" name="name_on_certificate"
+                                required>
                         </div>
                     </div>
                     <div class="form-group row">
@@ -114,9 +122,9 @@
                         </div>
                     </div>
                     <div class="form-group row">
-                        <label for="profile_photo" class="col-sm-4 col-form-label">Profile Photo URL</label>
+                        <label for="profile_photo" class="col-sm-4 col-form-label">Profile Photo</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="profile_photo" name="profile_photo">
+                            <input type="file" class="form-control-file" id="profile_photo" name="profile_photo">
                         </div>
                     </div>
                     <div class="form-group row">
@@ -129,4 +137,5 @@
         </div>
     </div>
 </body>
+
 </html>

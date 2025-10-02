@@ -1,65 +1,121 @@
 import os
 import requests
-from flask import Flask, request, render_template
+import uuid
+from flask import Flask, request, render_template, redirect, url_for, jsonify, session
 
 # --- Supabase API Details ---
-# Store these securely as environment variables
+# Reads keys from Vercel environment variables (os.environ.get)
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") # Used for secure POST
+
 # --- Flask Application Setup ---
 app = Flask(__name__)
+# IMPORTANT: REPLACE THIS WITH A LONG, RANDOM STRING IN PRODUCTION
+app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 
-# Route to serve the form page
-@app.route('/add-score', methods=['GET'])
-def add_score_form():
-    return render_template('add_score.html')
+# --- Authentication Helpers ---
+def is_authenticated():
+    """Checks if a valid access token exists in the session."""
+    return 'access_token' in session
 
-# Route to handle the form submission and add data
-@app.route('/add-score', methods=['POST'])
-def add_score():
-    data = {
-        "sid": request.form.get('sid'),
-        "name_on_certificate": request.form.get('name_on_certificate'),
-        "chinese_name": request.form.get('chinese_name'),
-        "nationality": request.form.get('nationality'),
-        "gender": request.form.get('gender'),
-        "test_location": request.form.get('test_location'),
-        "ticket_no": request.form.get('ticket_no'),
-        "certificate_no": request.form.get('certificate_no'),
-        "test_type": request.form.get('test_type'),
-        "test_time": request.form.get('test_time'),
-        "total_score": request.form.get('total_score'),
-        "status": request.form.get('status'),
-        "listening_score": request.form.get('listening_score'),
-        "reading_score": request.form.get('reading_score'),
-        "writing_score": request.form.get('writing_score'),
-        "oral_score": request.form.get('oral_score'),
-        "profile_photo": request.form.get('profile_photo')
-    }
+# --- Core Routes ---
 
-    # Remove fields with empty values to avoid API errors
-    data = {k: v for k, v in data.items() if v}
+# 1. Login Routes (The Security Layer)
+@app.route('/login', methods=['GET'])
+def login_form():
+    return render_template('login.html')
 
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.form.get('email')
+    password = request.form.get('password')
+
+    auth_url = f"{SUPABASE_URL}/auth/v1/token?grant_type=password"
+    
     headers = {
-        "apikey": SUPABASE_SERVICE_KEY,
-        "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+        "apikey": SUPABASE_KEY,
         "Content-Type": "application/json"
     }
-
-    api_url = f"{SUPABASE_URL}/rest/v1/scores"
+    
+    payload = {
+        "email": email,
+        "password": password
+    }
 
     try:
-        response = requests.post(api_url, json=data, headers=headers)
-        response.raise_for_status()
+        response = requests.post(auth_url, headers=headers, json=payload)
+        auth_data = response.json()
         
-        # Redirect to the results page with the new ID
-        return redirect(url_for('query_score', sid=request.form.get('sid')))
-    except requests.exceptions.RequestException as e:
-        return f"An API error occurred: {e}", 500
-    except Exception as e:
-        return f"An internal server error occurred: {e}", 500
+        if response.ok and 'access_token' in auth_data:
+            session['access_token'] = auth_data['access_token']
+            return redirect(url_for('add_score_form'))
+        else:
+            error_message = auth_data.get('msg', 'Invalid credentials')
+            return render_template('login.html', error=error_message), 401
 
+    except requests.exceptions.RequestException:
+        return render_template('login.html', error='Could not connect to authentication server.'), 500
+
+# 2. Secure POST Route
+@app.route('/add-score', methods=['GET', 'POST'])
+def add_score():
+    # Enforce Login: If not logged in, redirect to login page
+    if not is_authenticated():
+        return redirect(url_for('login_form'))
+        
+    if request.method == 'GET':
+        # Show the form
+        return render_template('add_score.html')
+        
+    if request.method == 'POST':
+        # Generate new ID on every POST request (Bug Fix)
+        new_sid = str(uuid.uuid4())
+        
+        data = {
+            # FIX: Use the newly generated ID for the POST request
+            "sid": new_sid, 
+            "name_on_certificate": request.form.get('name_on_certificate'),
+            "chinese_name": request.form.get('chinese_name'),
+            "nationality": request.form.get('nationality'),
+            "gender": request.form.get('gender'),
+            # ... all other fields from the form ...
+            "test_location": request.form.get('test_location'),
+            "ticket_no": request.form.get('ticket_no'),
+            "certificate_no": request.form.get('certificate_no'),
+            "test_type": request.form.get('test_type'),
+            "test_time": request.form.get('test_time'),
+            "total_score": request.form.get('total_score'),
+            "status": request.form.get('status'),
+            "listening_score": request.form.get('listening_score'),
+            "reading_score": request.form.get('reading_score'),
+            "writing_score": request.form.get('writing_score'),
+            "oral_score": request.form.get('oral_score'),
+            "profile_photo": request.form.get('profile_photo')
+        }
+
+        # Use the Service Key for admin-level POST (as we planned)
+        headers = {
+            "apikey": SUPABASE_SERVICE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
+        }
+
+        api_url = f"{SUPABASE_URL}/rest/v1/scores"
+
+        try:
+            response = requests.post(api_url, json=data, headers=headers)
+            response.raise_for_status()
+            
+            # Redirect to the results page with the new ID
+            return redirect(url_for('query_score', sid=new_sid))
+        except requests.exceptions.RequestException as e:
+            return f"An API error occurred: {e}", 500
+        except Exception as e:
+            return f"An internal server error occurred: {e}", 500
+
+# 3. Read Route (Public)
 @app.route('/queryScore.do')
 def query_score():
     """Handles the query and fetches data from Supabase."""
@@ -67,9 +123,9 @@ def query_score():
     if not student_id:
         return "Student ID is missing.", 400
 
-    # The API URL to query your 'scores' table
     api_url = f"{SUPABASE_URL}/rest/v1/scores"
 
+    # Use the public key for read access
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -83,13 +139,12 @@ def query_score():
 
     try:
         response = requests.get(api_url, headers=headers, params=params)
-        response.raise_for_status()  # Raise an exception for bad status codes
+        response.raise_for_status()
         
         data = response.json()
 
         if data and len(data) > 0:
             student_data = data[0]
-            # Render the original HTML template with the fetched data
             return render_template('results.html', student=student_data)
         else:
             return "Student ID not found.", 404
