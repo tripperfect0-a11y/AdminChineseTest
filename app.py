@@ -126,11 +126,26 @@ def add_score_route():
         try:
             requests.post(api_url, json=data, headers=headers).raise_for_status()
             
-            return redirect(url_for('query_score', sid=new_sid))
+           # Redirect to the new success page with the new ID
+            return redirect(url_for('score_success', sid=new_sid))
         except requests.exceptions.RequestException as e:
             return f"Error inserting data: {e}", 500
         except Exception as e:
             return f"An internal server error occurred: {e}", 500
+
+# Route to display the QR code and link after successful POST
+@app.route('/score-success')
+def score_success():
+    # We pass the sid via query parameter from the POST redirect
+    student_id = request.args.get('sid') 
+    
+    # Construct the full public URL using the student_id
+    # IMPORTANT: Ensure 'adminchinesetest.cn.com' is your correct domain
+    public_url = f"https://adminchinesetest.cn.com/queryScore.do?sid={student_id}"
+
+    return render_template('success.html', 
+                           full_url=public_url, 
+                           student_id=student_id)
 
 # 3. Read Route (Public)
 @app.route('/queryScore.do')

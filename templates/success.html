@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Score Added Successfully</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
+    <style>
+        body { padding-top: 50px; text-align: center; background-color: #f8f9fa; }
+        .container { max-width: 600px; }
+        .qr-section { margin-top: 30px; border: 1px solid #ddd; padding: 20px; border-radius: 8px; background-color: #fff; }
+        .qr-link { margin-top: 20px; word-break: break-all; background-color: #eee; padding: 10px; border-radius: 4px; font-family: monospace; }
+        .qr-code img { border: 5px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>✅ Score Successfully Recorded!</h2>
+        <p class="lead">Use the link or QR code below to view the student's result.</p>
+
+        <div class="qr-section">
+            <h4>Copy-Friendly Link:</h4>
+            <div class="qr-link" id="copy-link">{{ full_url }}</div>
+            
+            <button class="btn btn-default btn-sm" onclick="copyToClipboard('{{ full_url }}')">
+                Copy Link
+            </button>
+
+            <h4 style="margin-top: 30px;">Scan to View Results:</h4>
+            <div class="qr-code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ full_url }}" 
+                     alt="QR Code for Student ID {{ student_id }}">
+            </div>
+            
+            <p style="margin-top: 20px;">
+                <a href="{{ url_for('query_score', sid=student_id) }}" class="btn btn-primary">Go to Results Page Now</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Link copied to clipboard!");
+            }, (err) => {
+                console.error('Could not copy text: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
