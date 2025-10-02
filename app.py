@@ -11,7 +11,7 @@ SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") # Used for secure 
 
 # --- Flask Application Setup ---
 app = Flask(__name__)
-# IMPORTANT: REPLACE THIS WITH A LONG, RANDOM STRING IN PRODUCTION
+# The FLASK_SECRET_KEY is read from environment variables
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 
 # --- Authentication Helpers ---
@@ -49,7 +49,8 @@ def login():
         
         if response.ok and 'access_token' in auth_data:
             session['access_token'] = auth_data['access_token']
-            return redirect(url_for('add_score_form'))
+            # FIX 1: Redirect to the new unified function name
+            return redirect(url_for('add_score_route')) 
         else:
             error_message = auth_data.get('msg', 'Invalid credentials')
             return render_template('login.html', error=error_message), 401
@@ -57,29 +58,27 @@ def login():
     except requests.exceptions.RequestException:
         return render_template('login.html', error='Could not connect to authentication server.'), 500
 
-# 2. Secure POST Route
+# 2. Secure POST/GET Route (Consolidated)
 @app.route('/add-score', methods=['GET', 'POST'])
-def add_score():
+def add_score_route():
     # Enforce Login: If not logged in, redirect to login page
     if not is_authenticated():
         return redirect(url_for('login_form'))
         
     if request.method == 'GET':
-        # Show the form
+        # Logic for GET request (Show the form)
         return render_template('add_score.html')
         
     if request.method == 'POST':
-        # FIX 1: Generate new ID on every POST request (Moved inside the function)
+        # Logic for POST request (Submit the form)
         new_sid = str(uuid.uuid4()) 
         
         data = {
-            # FIX: Use the newly generated ID for the POST request
             "sid": new_sid, 
             "name_on_certificate": request.form.get('name_on_certificate'),
             "chinese_name": request.form.get('chinese_name'),
             "nationality": request.form.get('nationality'),
             "gender": request.form.get('gender'),
-            # ... all other fields from the form ...
             "test_location": request.form.get('test_location'),
             "ticket_no": request.form.get('ticket_no'),
             "certificate_no": request.form.get('certificate_no'),
@@ -91,12 +90,13 @@ def add_score():
             "reading_score": request.form.get('reading_score'),
             "writing_score": request.form.get('writing_score'),
             "oral_score": request.form.get('oral_score'),
-            # FIX 2: We need to handle the file upload here. 
-            # For now, we will set it to None, as the full file upload logic is complex.
-            "profile_photo": None 
+            "profile_photo": request.form.get('profile_photo')
         }
 
-        # Use the Service Key for admin-level POST (as we planned)
+        # Remove fields with empty values (Good practice)
+        data = {k: v for k, v in data.items() if v}
+
+        # Use the Service Key for admin-level POST 
         headers = {
             "apikey": SUPABASE_SERVICE_KEY,
             "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
@@ -110,14 +110,14 @@ def add_score():
             response = requests.post(api_url, json=data, headers=headers)
             response.raise_for_status()
             
-            # Redirect to the results page with the new ID
+            # Final successful redirect
             return redirect(url_for('query_score', sid=new_sid))
         except requests.exceptions.RequestException as e:
             return f"An API error occurred: {e}", 500
         except Exception as e:
             return f"An internal server error occurred: {e}", 500
 
-# 3. Read Route (Public)
+# 3. Read Route (Public) - Remains the same
 @app.route('/queryScore.do')
 def query_score():
     """Handles the query and fetches data from Supabase."""
