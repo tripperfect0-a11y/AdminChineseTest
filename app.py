@@ -4,11 +4,10 @@ import uuid
 from flask import Flask, request, render_template, redirect, url_for, jsonify, session
 
 # --- Supabase API Details ---
-# Reads keys from Vercel environment variables (os.environ.get)
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") # Service Key is for POST/Storage Upload
-SUPABASE_STORAGE_BUCKET = "student-images" # Your Supabase Storage Bucket Name (Adjust if needed)
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") 
+SUPABASE_STORAGE_BUCKET = "student-images" 
 
 # --- Flask Application Setup ---
 app = Flask(__name__)
@@ -22,64 +21,78 @@ def is_authenticated():
 
 # --- Core Routes ---
 
+# 1. Login/Auth Route (UNIFIED FIX)
 @app.route('/login', methods=['GET', 'POST'])
-def login():
-    # ... Login logic is correct and remains the same (not repeated for brevity) ...
-    pass # Assume this block is in app.py
+def login_route():
+    if request.method == 'GET':
+        # Show the login form
+        return render_template('login.html')
 
-@app.route('/login', methods=['POST'])
-def login():
-    email = request.form.get('email')
-    password = request.form.get('password')
-    # ... rest of the login logic ...
-    
-    # SUCCESSFUL LOGIN REDIRECT:
-    # return redirect(url_for('add_score_route')) 
-    # ...
-    pass # Assume this block is in app.py
+    if request.method == 'POST':
+        # Process the login
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        auth_url = f"{SUPABASE_URL}/auth/v1/token?grant_type=password"
+        
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Content-Type": "application/json"
+        }
+        
+        payload = {"email": email, "password": password}
+
+        try:
+            response = requests.post(auth_url, headers=headers, json=payload)
+            auth_data = response.json()
+            
+            if response.ok and 'access_token' in auth_data:
+                session['access_token'] = auth_data['access_token']
+                # FIX: Redirect to the unified add_score_route
+                return redirect(url_for('add_score_route')) 
+            else:
+                error_message = auth_data.get('msg', 'Invalid credentials')
+                return render_template('login.html', error=error_message), 401
+
+        except requests.exceptions.RequestException:
+            return render_template('login.html', error='Could not connect to authentication server.'), 500
 
 # 2. Secure POST/GET Route (Consolidated)
 @app.route('/add-score', methods=['GET', 'POST'])
 def add_score_route():
     # Enforce Login: If not logged in, redirect to login page
     if not is_authenticated():
-        return redirect(url_for('login_form'))
+        return redirect(url_for('login_route'))
         
     if request.method == 'GET':
-        # Logic for GET request (Show the form)
         return render_template('add_score.html')
         
     if request.method == 'POST':
         # 1. Generate new ID and handle file upload
         file = request.files.get('profile_photo')
         new_sid = str(uuid.uuid4()) 
-        profile_photo_url = request.form.get('profile_photo') # Default to URL if provided
+        profile_photo_url = request.form.get('profile_photo') 
 
         if file and file.filename:
-            # Generate unique filename for storage
+            # File Upload Logic (Complex)
             filename = f"{new_sid}-{file.filename}"
-            
-            # Construct the public URL first (used later)
             profile_photo_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{filename}"
             
             headers = {
                 "apikey": SUPABASE_SERVICE_KEY,
                 "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
                 "Content-Type": file.content_type,
-                "x-upsert": "true" 
+                "x-upsert": "true"
             }
             
             try:
-                # API Call to Upload the File
-                response = requests.post(
+                requests.post(
                     f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{filename}", 
                     data=file.read(), 
                     headers=headers
-                )
-                response.raise_for_status()
+                ).raise_for_status()
                 
             except requests.exceptions.RequestException as e:
-                # This returns the error if the file upload fails
                 return f"Error uploading image to storage: {e}", 500
 
         # 2. Prepare and Insert Data
@@ -118,20 +131,17 @@ def add_score_route():
         api_url = f"{SUPABASE_URL}/rest/v1/scores"
 
         try:
-            response = requests.post(api_url, json=data, headers=headers)
-            response.raise_for_status()
+            requests.post(api_url, json=data, headers=headers).raise_for_status()
             
-            # Redirect to the results page with the new ID
+            # Final successful redirect
             return redirect(url_for('query_score', sid=new_sid))
         except requests.exceptions.RequestException as e:
             return f"Error inserting data: {e}", 500
-        except Exception as e:
-            return f"An internal server error occurred: {e}", 500
 
 # 3. Read Route (Public)
 @app.route('/queryScore.do')
 def query_score():
-    # ... your existing logic for the query_score route remains the same ...
+    # ... your existing logic for the query_score route remains the same (not repeated for brevity) ...
     pass # Assume this block is in app.py
 
 if __name__ == '__main__':
