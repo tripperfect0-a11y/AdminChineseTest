@@ -90,6 +90,7 @@ def add_score_route():
             "reading_score": request.form.get('reading_score'),
             "writing_score": request.form.get('writing_score'),
             "oral_score": request.form.get('oral_score'),
+            "oral_status": request.form.get('oral_status'),
             "profile_photo": request.form.get('profile_photo')
         }
 
