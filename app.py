@@ -108,7 +108,8 @@ def add_score_route():
             "writing_score": request.form.get('writing_score'),
             "oral_score": request.form.get('oral_score'),
             "oral_status": request.form.get('oral_status'),
-            "profile_photo": profile_photo_url
+            "profile_photo": profile_photo_url,
+            "hsk_level_4": request.form.get('hsk_level_4')
         }
         
         data = {k: v for k, v in data.items() if v} # Clean empty values
